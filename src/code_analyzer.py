@@ -169,6 +169,28 @@ def _extract_body_content(node: Node, code_string: bytes) -> str:
     end_byte = node.end_byte
     return code_string[start_byte:end_byte].decode('utf8')
 
+# --- New Helper Function for AST Visualization ---
+def _print_ast_node(node: Node, indent: str = "", include_fields: bool = False):
+    """
+    Recursively prints the AST nodes, showing their type and text.
+    Optionally includes field names for better understanding of node relationships.
+    """
+    node_text = node.text.decode('utf8').strip().split('\n')[0] # Get first line of text
+    print(f"{indent}Type: {node.type}, Text: '{node_text}'")
+
+    if include_fields:
+        # Note: node.children_by_field_name is a method, not an attribute in py-tree-sitter 0.21.1+
+        # It yields (field_name, child_node) tuples.
+        for field_name, child_node in node.children_by_field_name(): # Corrected to call as method
+            if child_node:
+                child_text = child_node.text.decode('utf8').strip().split('\n')[0]
+                print(f"{indent}  Field: {field_name}, Type: {child_node.type}, Text: '{child_text}'")
+                # If you want recursive printing for fields, you'd call _print_ast_node here
+                # For now, let's keep it simpler for initial visualization.
+
+    for child in node.children:
+        _print_ast_node(child, indent + "  ", include_fields) # Recursive call
+
 
 # --- Main Analysis Function ---
 
@@ -366,6 +388,13 @@ def goodbye(name: str):
     # Analyze the example code
     extracted_info = analyze_python_code(python_code_example, parser)
     
+    # --- Full AST Visualization ---
+    print("\n--- Full AST Visualization ---")
+    # You can choose to print the full root node or just significant parts
+    # For simplicity, let's start with the full root node.
+    _print_ast_node(parser.parse(python_code_example.encode("utf8")).root_node)
+
+
     print("\n--- Summary of Extracted Info (Detailed) ---")
     
     print(f"Total Functions Found: {len(extracted_info['functions'])}")
