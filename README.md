@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 OnboardAI
 OnboardAI is a tool designed to simplify onboarding for new developers by analyzing codebases and presenting key information in an intuitive web dashboard. It helps new joiners understand critical files, variables, functions, and classes without needing senior developer assistance. The tool supports Python, TypeScript, and JavaScript files and provides:
 
@@ -156,11 +155,3 @@ Commit changes: git commit -m "Add feature".
 Push: git push origin feature-name.
 Open a pull request.
 
-License
-MIT License. See LICENSE for details (add a LICENSE file if desired).
-Contact
-For issues or suggestions, open a GitHub issue or contact [your-email@example.com].
-=======
-# onboardai
-A tool to help new developers understand codebases by analyzing files and displaying code structure.
->>>>>>> d5d91360293f81217ee78e9e3c99d891843128c9
