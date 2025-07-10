@@ -1,0 +1,241 @@
+[
+  {
+    "file_path": "src/sample_codes/test1.py",
+    "module_docstring": null,
+    "top_level_variables": [
+      {
+        "name": "VAR1",
+        "value": "42",
+        "type": "int"
+      }
+    ],
+    "functions": [
+      {
+        "name": "func1",
+        "start_line": 3,
+        "end_line": 7,
+        "parameters": [
+          {
+            "name": "y",
+            "type": "float",
+            "default": null
+          }
+        ],
+        "local_vars": [
+          {
+            "name": "temp",
+            "value": "y + 1"
+          }
+        ],
+        "calls": [
+          "print"
+        ]
+      }
+    ],
+    "classes": []
+  },
+  {
+    "file_path": "src/sample_codes/test2.py",
+    "module_docstring": null,
+    "top_level_variables": [
+      {
+        "name": "VAR2",
+        "value": "True",
+        "type": "bool"
+      }
+    ],
+    "functions": [
+      {
+        "name": "func2",
+        "start_line": 3,
+        "end_line": 7,
+        "parameters": [
+          {
+            "name": "z",
+            "type": "str",
+            "default": null
+          }
+        ],
+        "local_vars": [
+          {
+            "name": "result",
+            "value": "f\"Hi {z}\""
+          }
+        ],
+        "calls": [
+          "print"
+        ]
+      }
+    ],
+    "classes": []
+  },
+  {
+    "file_path": "src/sample_codes/test.ts",
+    "module_docstring": null,
+    "top_level_variables": [
+      {
+        "name": "MY_VAR",
+        "value": "42",
+        "type": "number"
+      }
+    ],
+    "functions": [
+      {
+        "name": "arrowFunc",
+        "start_line": 4,
+        "end_line": 8,
+        "parameters": [
+          {
+            "name": "x",
+            "type": "number",
+            "default": null
+          },
+          {
+            "name": "y",
+            "type": "number",
+            "default": "10"
+          }
+        ],
+        "local_vars": [
+          {
+            "name": "z",
+            "value": "x + y"
+          }
+        ],
+        "calls": [
+          "log"
+        ]
+      },
+      {
+        "name": "asyncArrow",
+        "start_line": 20,
+        "end_line": 24,
+        "parameters": [
+          {
+            "name": "a",
+            "type": "string",
+            "default": "\"hello\""
+          },
+          {
+            "name": "b",
+            "type": "number",
+            "default": null
+          }
+        ],
+        "local_vars": [
+          {
+            "name": "temp",
+            "value": "a.length + (b || 0)"
+          }
+        ],
+        "calls": [
+          "log"
+        ]
+      }
+    ],
+    "classes": [
+      {
+        "name": "MyClass",
+        "start_line": 9,
+        "end_line": 17,
+        "attributes": [
+          {
+            "name": "classVar",
+            "value": "\"test\"",
+            "type": "string"
+          }
+        ],
+        "methods": [
+          {
+            "name": "constructor",
+            "parameters": [
+              {
+                "name": "param",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "myMethod",
+            "parameters": [
+              {
+                "name": "x",
+                "type": "number"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file_path": "src/sample_codes/test.js",
+    "module_docstring": null,
+    "top_level_variables": [
+      {
+        "name": "MY_VAR",
+        "value": "42",
+        "type": null
+      }
+    ],
+    "functions": [
+      {
+        "name": "myFunc",
+        "start_line": 3,
+        "end_line": 7,
+        "parameters": [
+          {
+            "name": "x",
+            "type": null,
+            "default": null
+          }
+        ],
+        "local_vars": [
+          {
+            "name": "y",
+            "value": "x + 1"
+          }
+        ],
+        "calls": [
+          "log"
+        ]
+      }
+    ],
+    "classes": []
+  },
+  {
+    "file_path": "src/sample_codes/test_plain.js",
+    "module_docstring": null,
+    "top_level_variables": [
+      {
+        "name": "MY_VAR",
+        "value": "42",
+        "type": null
+      }
+    ],
+    "functions": [
+      {
+        "name": "myFunc",
+        "start_line": 3,
+        "end_line": 7,
+        "parameters": [
+          {
+            "name": "x",
+            "type": null,
+            "default": null
+          }
+        ],
+        "local_vars": [
+          {
+            "name": "y",
+            "value": "x + 1"
+          }
+        ],
+        "calls": [
+          "log"
+        ]
+      }
+    ],
+    "classes": []
+  }
+]

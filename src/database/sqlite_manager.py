@@ -4,18 +4,8 @@ import os
 from typing import Optional, List
 from datetime import datetime
 
-# Import dataclasses from code_analyzer for type hinting
-# We need to make sure these dataclasses are accessible,
-# so we'll import them or define simple stubs if direct import creates circular dependency.
-# For now, let's assume direct import is fine, or you'll define simple class structures if needed.
-# However, the cleaner way is to keep dataclasses in a shared place or pass dicts.
-# For simplicity, and avoiding premature over-engineering, let's assume we pass sufficient details.
-# No, let's define them here too, or structure them in a 'models.py'
-# The best approach is to define data models in a separate `src/models.py` file.
-# For now, copying them to avoid circular imports. This will be refactored later.
-
-# --- Data Structures for Code Elements (Copied for independent use) ---
-# In a larger project, these would be in a shared `src/models.py`
+# --- Data Structures for Code Elements ---
+# In a larger project, these would typically be in a shared `src/models.py`
 # to avoid duplication and circular dependencies.
 class ParameterInfo:
     def __init__(self, name: str, default_value: Optional[str] = None, type_annotation: Optional[str] = None):
@@ -59,7 +49,6 @@ class ClassInfo:
         self.methods = methods
         self.body = body
         self.attributes = attributes
-
 
 class SQLiteManager:
     def __init__(self, db_name='onboardai.db'):
@@ -205,6 +194,28 @@ class SQLiteManager:
             print("Database Manager Error: Failed to create one or more tables.")
         return success
 
+    def drop_tables(self):
+        """Drops all database tables if they exist, respecting foreign key dependencies."""
+        if not self.conn:
+            print("Database Manager Error: Cannot drop tables, no connection.")
+            return False
+
+        print("Database Manager: Dropping existing tables...")
+        try:
+            # Drop tables in reverse order of creation to handle foreign key dependencies
+            self._execute_query("DROP TABLE IF EXISTS FunctionCalls")
+            self._execute_query("DROP TABLE IF EXISTS Variables")
+            self._execute_query("DROP TABLE IF EXISTS Parameters")
+            self._execute_query("DROP TABLE IF EXISTS Functions")
+            self._execute_query("DROP TABLE IF EXISTS Classes")
+            self._execute_query("DROP TABLE IF EXISTS Files")
+            self.conn.commit()
+            print("Database Manager: All tables dropped successfully.")
+            return True
+        except sqlite3.Error as e:
+            print(f"Database Manager Error dropping tables: {e}")
+            return False
+
     def insert_file(self, path: str, last_modified_at: str, checksum: str, full_content: str) -> Optional[int]:
         query = """
         INSERT INTO Files (path, last_modified_at, checksum, full_content)
@@ -218,8 +229,6 @@ class SQLiteManager:
         query = "SELECT id, path, last_modified_at, checksum, full_content FROM Files WHERE path = ?"
         self.cursor.execute(query, (path,))
         return self.cursor.fetchone()
-
-    # --- NEW INSERT METHODS FOR CODE STRUCTURES ---
 
     def insert_class(self, file_id: int, class_info: ClassInfo) -> Optional[int]:
         query = """
@@ -247,13 +256,16 @@ class SQLiteManager:
         return None
 
     def insert_parameter(self, function_id: int, param_info: ParameterInfo) -> Optional[int]:
+        print(f"DB: Inserting parameter for function_id={function_id}: name={param_info.name}, type={param_info.type_annotation}, default={param_info.default_value}")
         query = """
         INSERT INTO Parameters (function_id, name, type_annotation, default_value)
         VALUES (?, ?, ?, ?)
         """
         params = (function_id, param_info.name, param_info.type_annotation, param_info.default_value)
         if self._execute_query(query, params):
+            print(f"DB: Successfully inserted parameter '{param_info.name}' for function_id={function_id}")
             return self.cursor.lastrowid
+        print(f"DB: Failed to insert parameter '{param_info.name}' for function_id={function_id}")
         return None
 
     def insert_variable(self, variable_info: VariableInfo, file_id: Optional[int] = None, 
@@ -281,6 +293,123 @@ class SQLiteManager:
             return self.cursor.lastrowid
         return None
 
+    def get_file_by_path(self, file_path: str) -> Optional[tuple]:
+        """Retrieves a file by its path."""
+        try:
+            self.cursor.execute("SELECT * FROM Files WHERE path = ?", (file_path,))
+            return self.cursor.fetchone()
+        except sqlite3.Error as e:
+            print(f"Database Manager Error: Failed to get file by path: {e}")
+            return None
+
+    def get_all_files(self) -> List[tuple]:
+        """Retrieves all files from the database."""
+        try:
+            self.cursor.execute("SELECT * FROM Files")
+            return self.cursor.fetchall()
+        except sqlite3.Error as e:
+            print(f"Database Manager Error: Failed to get all files: {e}")
+            return []
+
+    def get_functions_by_file_id(self, file_id: int) -> List[tuple]:
+        """Retrieves all top-level functions for a given file ID."""
+        try:
+            self.cursor.execute("SELECT * FROM Functions WHERE file_id = ? AND class_id IS NULL", (file_id,))
+            return self.cursor.fetchall()
+        except sqlite3.Error as e:
+            print(f"Database Manager Error: Failed to get functions by file ID: {e}")
+            return []
+
+    def get_classes_by_file_id(self, file_id: int) -> List[tuple]:
+        """Retrieves all classes for a given file ID."""
+        try:
+            self.cursor.execute("SELECT * FROM Classes WHERE file_id = ?", (file_id,))
+            return self.cursor.fetchall()
+        except sqlite3.Error as e:
+            print(f"Database Manager Error: Failed to get classes by file ID: {e}")
+            return []
+
+    def get_methods_by_class_id(self, class_id: int) -> List[tuple]:
+        """Retrieves all methods for a given class ID."""
+        try:
+            self.cursor.execute("SELECT * FROM Functions WHERE class_id = ?", (class_id,))
+            return self.cursor.fetchall()
+        except sqlite3.Error as e:
+            print(f"Database Manager Error: Failed to get methods by class ID: {e}")
+            return []
+
+    def get_parameters_by_function_id(self, function_id: int) -> List[tuple]:
+        """Retrieves all parameters for a given function ID."""
+        print(f"DB: Retrieving parameters for function_id={function_id}")
+        try:
+            self.cursor.execute("SELECT * FROM Parameters WHERE function_id = ?", (function_id,))
+            params = self.cursor.fetchall()
+            print(f"DB: Retrieved {len(params)} parameters for function_id={function_id}: {params}")
+            return params
+        except sqlite3.Error as e:
+            print(f"Database Manager Error: Failed to get parameters by function ID: {e}")
+            return []
+
+    def get_variables_by_scope(self, file_id=None, function_id=None, class_id=None, is_global=False, is_class_attr=False, is_func_local=False):
+        """Retrieve variables from the variables table based on scope."""
+        query = """
+            SELECT id, file_id, class_id, function_id, name, value, type_annotation, is_global, is_class_attribute, is_function_local, defined_at_line
+            FROM variables
+            WHERE 1=1
+        """
+        params = []
+        if file_id is not None:
+            query += " AND file_id = ?"
+            params.append(file_id)
+        if function_id is not None:
+            query += " AND function_id = ?"
+            params.append(function_id)
+        if class_id is not None:
+            query += " AND class_id = ?"
+            params.append(class_id)
+        if is_global:
+            query += " AND is_global = ?"
+            params.append(1)
+        if is_class_attr:
+            query += " AND is_class_attribute = ?"
+            params.append(1)
+        if is_func_local:
+            query += " AND is_function_local = ?"
+            params.append(1)
+        
+        try:
+            self.cursor.execute(query, params)
+            return self.cursor.fetchall()
+        except sqlite3.Error as e:
+            print(f"Database error while retrieving variables: {e}")
+            return []
+    
+    def get_function_calls_by_calling_function_id(self, calling_function_id: int) -> List[tuple]:
+        """Retrieves all function calls made by a specific function/method."""
+        try:
+            self.cursor.execute("SELECT * FROM FunctionCalls WHERE calling_function_id = ?", (calling_function_id,))
+            return self.cursor.fetchall()
+        except sqlite3.Error as e:
+            print(f"Database Manager Error: Failed to get function calls: {e}")
+            return []
+
+    def get_class_by_id(self, class_id: int) -> Optional[tuple]:
+        """Retrieves a class by its ID."""
+        try:
+            self.cursor.execute("SELECT * FROM Classes WHERE id = ?", (class_id,))
+            return self.cursor.fetchone()
+        except sqlite3.Error as e:
+            print(f"Database Manager Error: Failed to get class by ID: {e}")
+            return None
+
+    def get_function_by_id(self, function_id: int) -> Optional[tuple]:
+        """Retrieves a function by its ID."""
+        try:
+            self.cursor.execute("SELECT * FROM Functions WHERE id = ?", (function_id,))
+            return self.cursor.fetchone()
+        except sqlite3.Error as e:
+            print(f"Database Manager Error: Failed to get function by ID: {e}")
+            return None
 
 # --- Test execution for SQLiteManager (for initial setup confirmation) ---
 if __name__ == "__main__":
@@ -289,6 +418,9 @@ if __name__ == "__main__":
     
     try:
         db_manager.connect()
+        # Test dropping tables first
+        db_manager.drop_tables()
+        
         if db_manager.create_tables():
             print("\nTest: Tables created successfully. You can now check the 'data/onboardai.db' file.")
             
